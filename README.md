@@ -1,47 +1,35 @@
-[![build status](https://secure.travis-ci.org/NickQiZhu/dc.js.png)](http://travis-ci.org/NickQiZhu/dc.js)
 
-dc.js
+Changes for enabling multiple filtering/selection in dc.js
 =====
 
-Dimensional charting built to work natively with crossfilter rendered using d3.js. Check out
-[example page](http://nickqizhu.github.com/dc.js/) with a quick five minutes how to guide. For
-detailed API reference please visit [Wiki](https://github.com/NickQiZhu/dc.js/wiki).
-
-
-Install with npm
+The goal was
 --------------------
-npm install dc
+* be able to filter by multiple data points in supported charts
+* the user can trigger this functionality by holding a modifier key while clicking
+* changes should not break existing code that uses dc.js -> backwards compatibility
 
-
-Install without npm
+Usage
 --------------------
-Download
-* [d3.js](https://github.com/mbostock/d3)
-* [crossfilter.js](https://github.com/square/crossfilter)
-* [dc.js](https://github.com/NickQiZhu/dc.js)
+(also refer to updated API)
 
+The usage is simple: By default multiple selection is not enabled. By calling .allowMultipleFilters(true) on a supported chart the feature is enabled. By holding CTRL or SHIFT while clicking, multiple data points can then be selected.
 
-How to build dc.js locally
----------------------------
-
-### Prerequisite modules
-
-Make sure the following packages are installed on your machine
-* node.js
-* npm
-* apache ant
-
-### Install dependencies
-
-dc.js$ npm install
-
-### Build and Test
-
-dc.js$ ./make
-
-
-License
+Implementation Details
 --------------------
+Three somehow distinct tasks were identified (independent of filter multiplicity):
+* Selection (detect user actions on UI)
+* Filtering (crossfilter interaction, filterHandler)
+* Display filter (display controls, highlight filtered portion within chart)
 
-dc.js is an open source javascript library and licensed under
-[Apache License v2](http://www.apache.org/licenses/LICENSE-2.0.html).
+The implementation seperates these three tasks.
+
+### Selection
+Because every chart that supports single data point selection can also support multi selection, singleSelectionChart was replaced by multiSelectionChart. It captures the click event to support single selection. However, if multiple filtering is turned on, it reacts to modifier keys to trigger multiple selection accordingly.
+
+### Filtering
+Filtering and Selection were both handeled by singleSelectionChart. Filtering is now moved to the base chart. The filter() method behaves still the same. New methods filterAdd(f), filterRemove(f) and filters(f) were added to support multiple filtering programatically.
+
+### Display Filter
+The charts basically supported highligthing more than one slice/bar/whatever already, so very little had to be changed here. The base chart also provides a method displayFilter() that can be overriden by a subchart (instead of overriding filter like before). This is only used by coordinateGridChart so far.
+
+There were definitely a lot of other ways this could have been implemented. I don't claim this is the best one. At least it works fine on current Firefox and IE browsers. Also, because backwards compatibility was a goal, there is some overhead associated with it. The implementation could be cleaner, if that goal was dropped.
