@@ -11,8 +11,19 @@ dc.printers.filter = function (filter) {
             else if (filter.length >= 1)
                 s = printSingleValue(filter[0]);
         } else {
-            s = printSingleValue(filter)
+            s = printSingleValue(filter);
         }
+    }
+
+    return s;
+};
+dc.printers.multiFilter = function (filters, filterPrinter) {
+    var s = "";
+
+    for (var i = 0; i < filters.length; i++) {
+        if (i > 0)
+            s += ", ";
+        s += filterPrinter(filters[i]);
     }
 
     return s;

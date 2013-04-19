@@ -2,7 +2,7 @@ dc.barChart = function (parent, chartGroup) {
     var MIN_BAR_WIDTH = 1;
     var DEFAULT_GAP_BETWEEN_BARS = 2;
 
-    var _chart = dc.stackableChart(dc.coordinateGridChart(dc.singleSelectionChart({})));
+    var _chart = dc.stackableChart(dc.coordinateGridChart(dc.multiSelectionChart({})));
 
     var _gap = DEFAULT_GAP_BETWEEN_BARS;
     var _centerBar = false;
@@ -135,10 +135,10 @@ dc.barChart = function (parent, chartGroup) {
         var extent = _chart.brush().extent();
 
         if (_chart.isOrdinal()) {
-            if (_chart.filter() != null)
+            if (_chart.hasFilter())
                 bars.classed(dc.constants.DESELECTED_CLASS, function (d) {
                     var key = _chart.keyAccessor()(d);
-                    return key != _chart.filter();
+                    return !_chart.isFilteredBy(key);
                 });
             else
                 bars.classed(dc.constants.DESELECTED_CLASS, false);

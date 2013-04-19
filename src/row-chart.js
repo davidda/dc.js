@@ -6,7 +6,7 @@ dc.rowChart = function(parent, chartGroup) {
 
     var _rowCssClass = "row";
 
-    var _chart = dc.singleSelectionChart(dc.colorChart(dc.baseChart({})));
+    var _chart = dc.multiSelectionChart(dc.colorChart(dc.baseChart({})));
 
     var _xScale;
 

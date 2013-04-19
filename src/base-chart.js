@@ -29,7 +29,22 @@ dc.baseChart = function (_chart) {
 
     var _transitionDuration = 750;
 
+    var _filter;
+    var _allowMultipleFilters = false;
+    var _multiFilter = [];
     var _filterPrinter = dc.printers.filter;
+    var _multiFilterPrinter = dc.printers.multiFilter;
+    var _filterHandler = function (dimension, filter) {
+        if (_chart.allowMultipleFilters()) {
+            if (filter.length > 0)
+                dimension.filterFunction(function (d) { return filter.indexOf(d) >= 0; });
+            else
+                dimension.filter(null);
+        } else
+            dimension.filter(filter);
+
+        return filter;
+    };
 
     var _renderlets = [];
 
@@ -136,9 +151,15 @@ dc.baseChart = function (_chart) {
         return _chart;
     };
 
+    _chart.multiFilterPrinter = function (_) {
+        if (!arguments.length) return _multiFilterPrinter;
+        _multiFilterPrinter = _;
+        return _chart;
+    };
+
     _chart.turnOnControls = function () {
         _chart.selectAll(".reset").style("display", null);
-        _chart.selectAll(".filter").text(_filterPrinter(_chart.filter())).style("display", null);
+        _chart.selectAll(".filter").text(_multiFilterPrinter(_chart.filters(), _chart.filterPrinter())).style("display", null);
         return _chart;
     };
 
@@ -197,10 +218,89 @@ dc.baseChart = function (_chart) {
         if (f !== undefined) _listeners.filtered(_chart, f);
     };
 
-    // abstract function stub
-    _chart.filter = function (f) {
-        // do nothing in base, should be overridden by sub-function
-        _chart.invokeFilteredListener(_chart, f);
+    _chart.hasFilter = function () {
+        return _filter != null;
+    };
+
+    _chart.isFilteredBy = function (d) {
+        return _multiFilter.indexOf(d) >= 0;
+    };
+
+    _chart.filter = function (newFilter) {
+        if (!arguments.length) return _filter;
+
+        return _chart.filters(newFilter ? [newFilter] : []);
+    };
+
+    _chart.filterAdd = function (newFilter) {
+        if (!arguments.length || !newFilter) return _chart;
+
+        if (_multiFilter.length > 0 && !_chart.allowMultipleFilters())
+            throw new dc.errors.Exception("Multiple filters are not enabled for this chart!");
+
+        _multiFilter.push(newFilter);
+
+        return _chart.filters(_multiFilter);
+    };
+
+    _chart.filterRemove = function (delFilter) {
+        if (!arguments.length || !delFilter) return _chart;
+
+        var i = _multiFilter.indexOf(delFilter);
+
+        if (i >= 0)
+            _multiFilter.splice(i, 1);
+
+        return _chart.filters(_multiFilter);
+    };
+
+    _chart.filters = function (filters) {
+        if (!arguments.length) return _multiFilter;
+
+        if (!filters) filters = [];
+
+        if (filters.length > 1 && !_chart.allowMultipleFilters())
+            throw new dc.errors.Exception("Multiple filters are not enabled for this chart!");
+
+        _filter = filters.length == 0 ? null : filters[filters.length - 1];
+
+        if (_chart.dataSet() && _chart.dimension().filter != undefined) {
+            var f;
+            if (_chart.allowMultipleFilters()) {
+                f = _filterHandler(_chart.dimension(), filters);
+                _multiFilter = f ? f : filters;
+                _filter = _multiFilter.length == 0 ? null : _multiFilter[_multiFilter.length - 1];
+            } else {
+                f = _filterHandler(_chart.dimension(), _filter);
+                _filter = f ? f : _filter;
+                _multiFilter = f ? [f] : _multiFilter;
+            }
+        }
+
+        _chart.displayFilter();
+        _chart.invokeFilteredListener(_chart, _chart.allowMultipleFilters() ? _multiFilter : _filter);
+
+        return _chart;
+    };
+
+    _chart.filterHandler = function (_) {
+        if (!arguments.length) return _filterHandler;
+        _filterHandler = _;
+        return _chart;
+    };
+
+    _chart.allowMultipleFilters = function (b) {
+        if (!arguments.length) return _allowMultipleFilters;
+        _allowMultipleFilters = b;
+        return _chart;
+    };
+
+    _chart.displayFilter = function () {
+        if (_chart.hasFilter())
+            _chart.turnOnControls();
+        else
+            _chart.turnOffControls();
+
         return _chart;
     };
 

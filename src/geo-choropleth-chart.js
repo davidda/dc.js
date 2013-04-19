@@ -1,5 +1,5 @@
 dc.geoChoroplethChart = function (parent, chartGroup) {
-    var _chart = dc.singleSelectionChart(dc.colorChart(dc.baseChart({})));
+    var _chart = dc.multiSelectionChart(dc.colorChart(dc.baseChart({})));
 
     _chart.colorAccessor(function (d, i) {
         return d;
@@ -84,11 +84,11 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
     }
 
     function isSelected(layerIndex, d) {
-        return _chart.hasFilter() && _chart.filter() == getKey(layerIndex, d);
+        return _chart.hasFilter() && _chart.isFilteredBy(getKey(layerIndex, d));
     }
 
     function isDeselected(layerIndex, d) {
-        return _chart.hasFilter() && _chart.filter() != getKey(layerIndex, d);
+        return _chart.hasFilter() && !_chart.isFilteredBy(getKey(layerIndex, d));
     }
 
     function getKey(layerIndex, d) {
@@ -119,17 +119,9 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
 
     _chart.onClick = function (d, layerIndex) {
         var selectedRegion = geoJson(layerIndex).keyAccessor(d);
-        if (selectedRegion == _chart.filter()) {
-            dc.events.trigger(function () {
-                _chart.filter(null);
-                dc.redrawAll(_chart.chartGroup());
-            });
-        } else {
-            dc.events.trigger(function () {
-                _chart.filter(selectedRegion);
-                dc.redrawAll(_chart.chartGroup());
-            });
-        }
+        dc.events.trigger(function () {
+            _chart.filterTo(selectedRegion);
+        });
     };
 
     function renderTitle(regionG, layerIndex, data) {
@@ -153,7 +145,7 @@ dc.geoChoroplethChart = function (parent, chartGroup) {
             if (_geoJsons[i].name == name) {
                 _geoJsons[i].data = json;
                 _geoJsons[i].keyAccessor = keyAccessor;
-                return _chart
+                return _chart;
             }
         }
         _geoJsons.push({name: name, data: json, keyAccessor: keyAccessor});

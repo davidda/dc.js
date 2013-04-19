@@ -9,7 +9,7 @@ dc.pieChart = function(parent, chartGroup) {
 
     var _minAngleForLabel = DEFAULT_MIN_ANGLE_FOR_LABEL;
 
-    var _chart = dc.singleSelectionChart(dc.colorChart(dc.baseChart({})));
+    var _chart = dc.multiSelectionChart(dc.colorChart(dc.baseChart({})));
 
     _chart.label(function(d) {
         return _chart.keyAccessor()(d.data);
@@ -233,7 +233,7 @@ dc.pieChart = function(parent, chartGroup) {
     };
 
     _chart.isSelectedSlice = function(d) {
-        return _chart.filter() == _chart.keyAccessor()(d.data);
+        return _chart.isFilteredBy(_chart.keyAccessor()(d.data));
     };
 
     _chart.doRedraw = function() {
