@@ -199,5 +199,14 @@ dc.lineChart = function(parent, chartGroup) {
         return _chart;
     };
 
+    _chart.allowMultipleFilters = function (b) {
+        if (!arguments.length) return false;
+
+        if (b)
+            throw new dc.errors.Exception("Multiple filters not supported by line chart!");
+
+        return _chart;
+    };
+
     return _chart.anchor(parent, chartGroup);
 };

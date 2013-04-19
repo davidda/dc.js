@@ -180,6 +180,11 @@ dc.barChart = function (parent, chartGroup) {
         }
         return extent;
     };
+    
+    dc.override(_chart, "allowMultipleFilters", function (b) {
+        if (!arguments.length) return this._allowMultipleFilters() && _chart.isOrdinal();
+        return this._allowMultipleFilters(b);
+    });
 
     dc.override(_chart, "prepareOrdinalXAxis", function () {
         return this._prepareOrdinalXAxis(_chart.xUnitCount() + 1);
