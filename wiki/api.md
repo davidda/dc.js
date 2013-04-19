@@ -2,18 +2,18 @@ The entire dc.js library is scoped under **dc** name space. It does not introduc
 
 * [Base Chart [abstract]](#base-chart)
 * [Color Chart [abstract]](#color-chart)
-* [Single Selection Chart [abstract]](#single-selection-chart)
+* [Multi Selection Chart [abstract]](#multi-selection-chart)
 * [Stackable Chart [abstract]](#stackable-chart)
 * [Coordinate Grid Chart [abstract] < Base Chart](#coordinate-grid-chart)
-* [Pie Chart [concrete] < Single Selection Chart < Color Chart < Base Chart](#pie-chart)
-* [Row Chart [concrete] < Single Selection Chart < Colro Chart < Base chart](#row-chart)
-* [Bar Chart [concrete] < Single Selection Chart < Stackable Chart < CoordinateGrid Chart](#bar-chart)
+* [Pie Chart [concrete] < Multi Selection Chart < Color Chart < Base Chart](#pie-chart)
+* [Row Chart [concrete] < Multi Selection Chart < Colro Chart < Base chart](#row-chart)
+* [Bar Chart [concrete] < Multi Selection Chart < Stackable Chart < CoordinateGrid Chart](#bar-chart)
 * [Line Chart [concrete] < Stackable Chart < CoordinateGrid Chart](#line-chart)
 * [Composite Chart [concrete] < CoordinateGrid Chart](#composite-chart)
-* [Abstract Bubble Chart [abstract] < Single Selection Chart < Color Chart](#abstract-bubble-chart)
+* [Abstract Bubble Chart [abstract] < Multi Selection Chart < Color Chart](#abstract-bubble-chart)
 * [Bubble Chart [concrete] < Abstract Bubble Chart < CoordinateGrid Chart](#bubble-chart)
 * [Bubble Overlay Chart [concrete] < Abstract Bubble Chart < Base Chart](#bubble-overlay-chart)
-* [Geo Choropleth Chart [concrete] < Single Selection Chart < Color Chart < Base Chart](#geo-choropleth-chart)
+* [Geo Choropleth Chart [concrete] < Multi Selection Chart < Color Chart < Base Chart](#geo-choropleth-chart)
 * [Data Count Widget [concrete] < Base Chart](#data-count)
 * [Data Table Widget [concrete] < Base Chart](#data-table)
 * [Listeners](#listeners)
@@ -58,8 +58,58 @@ the new group.
 
 If no value specified then the current group will be returned.
 
+#### .allowMultipleFilters([boolean])
+Set or get the allowMultipleFilters attribute of a chart. This attribute specifies whether multiple filter values
+are accepted by the chart. If true, the user can hold the CTRL or SHIFT keys while clicking to select multiple data points.
+For line charts and non-ordinal bar charts this attribute is always false, beacuse multiple filter values are not supported
+(these charts use a ranged filter instead).
+
 #### .filterAll()
 Clear all filters associated with this chart.
+
+#### .filter([filterValue])
+Filter the chart exclusively by the given value or return the current filter value if the input parameter is missing.
+In the last case if more than one filter value is present, only the one applied last is returned.
+```js
+// filter by a single string
+chart.filter("Sunday");
+// filter by a single age
+chart.filter(18);
+```
+
+#### .filters([filterValues])
+Filter the chart by the given array of filter values or return the current filter values if the input parameter is missing.
+
+#### .filterAdd([filterValue])
+Adds the given value as a filter to the chart.
+
+#### .filterRemove([filterValue])
+Removes the given value from the chart's filter values.
+
+#### .hasFilter()
+Check whether is an active filter associated with particular chart instance. This function is **not chainable**.
+
+#### .filterHandler([function])
+Set or get filter handler. Filter handler is a function that performs the filter action on a specific dimension. Using
+custom filter handler give you the flexibility to perform additional logic before or after filtering.
+
+```js
+// default filter handler
+function(dimension, filter){
+    dimension.filter(filter); // perform filtering
+    return filter; // return the actual filter value
+}
+
+// custom filter handler for single filter scenario
+chart.filterHandler(function(dimension, filter){
+    var newFilter = filter + 10;
+    dimension.filter(newFilter);
+    return newFilter; // set the actual filter value to the new value
+});
+```
+
+If allowMultipleFilters is false, the parameter filter is a single filter value, otherwise it is an array of filter values.
+The same applies to the return value.
 
 #### .select(selector)
 Execute in scope d3 single selection using the given selector and return d3 selection result. Roughly the same as:
@@ -88,9 +138,14 @@ handled as part of the dc internal. Resetting svg element on a chart outside of 
 consequences.
 
 #### .filterPrinter([filterPrinterFunction])
-Set or get filter printer function. Filter printer function is used to generate human friendly text for filter value(s)
-associated with the chart instance. By default dc charts shipped with a default filter printer implementation dc.printers.filter
+Set or get single filter printer function. It is used to generate human friendly text for a filter value of
+the chart instance. By default dc charts shipped with a default single filter printer implementation dc.printers.filter
 that provides simple printing support for both single value and ranged filters.
+
+#### .multiFilterPrinter([filterPrinterFunction])
+Set or get multi filter printer function. It is used to generate human friendly text for one or more filter creteria
+associated with the chart instance. By default dc charts shipped with a default multi filter printer implementation dc.printers.multiFilter
+that uses dc.printer.filter to get a human friendly text for each filter creterion of the chart that is then joined for display.
 
 #### .turnOnControls() & .turnOffControls
 Turn on/off optional control elements within the root element. dc.js currently support the following html control elements.
@@ -220,40 +275,11 @@ chart.colorDomain([0, 11])
 chart.colorDomain([0, 364])
 ```
 
-## <a name="single-selection-chart" href="#single-selection-chart">#</a> Single Selection Chart [Abstract]
-Single selection chart is an abstract functional class created to provide cross-chart support for single value filtering
-capability.
+## <a name="multi-selection-chart" href="#multi-selection-chart">#</a> Multi Selection Chart [Abstract]
+Multi selection chart is an abstract functional class created to provide cross-chart support for single and multiple
+value selecting capability.
 
-#### .filter([filterValue])
-Filter the chart by the given value or return the current filter if the input parameter is missing.
-```js
-// filter by a single string
-chart.filter("Sunday");
-// filter by a single age
-chart.filter(18);
-```
 
-#### .hasFilter()
-Check whether is an active filter associated with particular chart instance. This function is **not chainable**.
-
-#### .filterHandler([function])
-Set or get filter handler. Filter handler is a function that performs the filter action on a specific dimension. Using
-custom filter handler give you the flexibility to perform additional logic before or after filtering.
-
-```js
-// default filter handler
-function(dimension, filter){
-    dimension.filter(filter); // perform filtering
-    return filter; // return the actual filter value
-}
-
-// custom filter handler
-chart.filterHandler(function(dimension, filter){
-    var newFilter = filter + 10;
-    dimension.filter(newFilter);
-    return newFilter; // set the actual filter value to the new value
-});
-```
 
 ## <a name="stackable-chart" href="#stackable-chart">#</a> Stackable Chart [Abstract]
 Stackable chart is an abstract chart introduced to provide cross-chart support of stackability. Concrete implementation of
@@ -406,7 +432,7 @@ chart.renderlet(function(chart){
 })
 ```
 
-## <a name="pie-chart" href="#pie-chart">#</a> Pie Chart [Concrete] < [Single Selection Chart](#single-selection-chart) < [Color Chart](#color-chart) < [Base Chart](#base-chart)
+## <a name="pie-chart" href="#pie-chart">#</a> Pie Chart [Concrete] < [Multi Selection Chart](#multi-selection-chart) < [Color Chart](#color-chart) < [Base Chart](#base-chart)
 This chart is a concrete pie chart implementation usually used to visualize small number of categorical distributions.
 Pie chart implementation uses keyAccessor to generate slices, and valueAccessor to calculate the size of each slice(key)
 relatively to the total sum of all values.
@@ -451,7 +477,7 @@ Get center y coordinate position. This function is **not chainable**.
 Get or set the minimal slice angle for label rendering. Any slice with a smaller angle will not render slice label.
 Default min angel is 0.5.
 
-## <a name="row-chart" href="#row-chart">#</a> Row Chart [Concrete] < [SingleSelectionChart](#single-selection-chart) < [Color Chart](#color-chart) < [Base Chart](#base-chart)
+## <a name="row-chart" href="#row-chart">#</a> Row Chart [Concrete] < [MultiSelectionChart](#multi-selection-chart) < [Color Chart](#color-chart) < [Base Chart](#base-chart)
 Concrete row chart implementation.
 
 #### dc.rowChart(parent[, chartGroup])
@@ -479,7 +505,7 @@ Get or set the x offset (horizontal space to the top left corner of a row) for l
 #### .labelOffsetY([y])
 Get of set the y offset (vertical space to the top left corner of a row) for labels on a particular row chart. Default y offset is 15px;
 
-## <a name="bar-chart" href="#bar-chart">#</a> Bar Chart [Concrete] < [Single Selection Chart](#single-selection-chart) < [Stackable Chart](#stackable-chart) < [CoordinateGrid Chart](#coordinate-grid-chart)
+## <a name="bar-chart" href="#bar-chart">#</a> Bar Chart [Concrete] < [Multi Selection Chart](#multi-selection-chart) < [Stackable Chart](#stackable-chart) < [CoordinateGrid Chart](#coordinate-grid-chart)
 Concrete bar chart/histogram implementation.
 
 Examples:
@@ -603,7 +629,7 @@ moveChart.compose([
 ]);
 ```
 
-## <a name="abstract-bubble-chart" href="#abstract-bubble-chart">#</a> Abstract Bubble Chart [Abstract] < [Single Selection Chart](#single-selection-chart) < [Color Chart](#color-chart)
+## <a name="abstract-bubble-chart" href="#abstract-bubble-chart">#</a> Abstract Bubble Chart [Abstract] < [Multi Selection Chart](#multi-selection-chart) < [Color Chart](#color-chart)
 An abstraction provides reusable functionalities for any chart that needs to visualize data using bubbles.
 
 #### .r([bubbleRadiusScale])
@@ -701,7 +727,7 @@ Set up a data point on the overlay. The name of a data point should match a spec
 If a match is found (point name <-> data group key) then a bubble will be automatically generated at the position specified by the
 function. x and y value specified here are relative to the underlying svg.
 
-## <a name="geo-choropleth-chart" href="#geo-choropleth-chart">#</a> Geo Choropleth Chart [Concrete] < [Single Selection Chart](#single-selection-chart) < [Color Chart](#color-chart) < [Base Chart](#base-chart)
+## <a name="geo-choropleth-chart" href="#geo-choropleth-chart">#</a> Geo Choropleth Chart [Concrete] < [Multi Selection Chart](#multi-selection-chart) < [Color Chart](#color-chart) < [Base Chart](#base-chart)
 Geo choropleth chart is design to make creating crossfilter driven choropleth map from GeoJson data an easy process. This
 chart implementation was inspired by [the great d3 choropleth example](http://bl.ocks.org/4060606).
 
